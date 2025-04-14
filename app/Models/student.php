@@ -9,6 +9,13 @@ class student extends Model
 {
     use HasFactory;
     
+    protected $casts = [
+        'is_learner_with_disability' => 'boolean',
+        'with_lrn' => 'boolean',
+        'indigenous_peoples' => 'boolean',
+        '4ps_beneficiary' => 'boolean',
+    ];
+    
     protected $fillable = [
         'lrn',
         'adviser_id',
