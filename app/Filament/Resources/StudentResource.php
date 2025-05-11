@@ -3,23 +3,33 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentResource\Pages;
-use App\Filament\Resources\StudentResource\RelationManagers;
-use App\Models\student;
+use App\Models\student as Student;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Actions\Action;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Actions;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Actions\StaticAction;
+use Filament\Forms\Components\Checkbox;
+use Illuminate\Validation\Rules\File;
+use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Illuminate\Support\Facades\Hash;
+use Filament\Tables\Enums\ActionsPosition;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class StudentResource extends Resource
 {
@@ -31,320 +41,605 @@ class StudentResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Learner’s Reference Number')
-                    ->description('The Learner’s Reference Number (LRN) must be a 12-digit number.')
-                    ->schema([
-                        Checkbox::make('with_lrn')
-                            ->label('With LRN?')
-                            ->inline()
-                            ->reactive(),
-                        TextInput::make('lrn')
-                            ->label('LRN')
-                            ->prefixIcon('heroicon-m-user-circle')
-                            ->hidden(fn (callable $get) => ! $get('with_lrn'))
-                            ->columnSpan(3),
-                    ])
-                    ->columns(4),
+                FileUpload::make('profile')
+                    ->label('Profile Picture')
+                    ->image()
+                    ->imageEditor()
+                    ->directory('students/profiles')
+                    ->preserveFilenames()
+                    ->columnSpanFull()
+                    ->required(),
     
-                Section::make('Student Personal Information')
-                    ->description('Basic personal details of the learner.')
-                    ->schema([
-                        TextInput::make('adviser_id')
-                            ->label('Adviser ID')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        TextInput::make('last_name')
-                            ->label('Last Name')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        TextInput::make('first_name')
-                            ->label('First Name')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        TextInput::make('middle_name')
-                            ->label('Middle Name')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        TextInput::make('extension_name')
-                            ->label('Extension Name')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        DatePicker::make('birthdate')
-                            ->label('Birthdate')
-                            ->prefixIcon('heroicon-m-cake')
-                            ->native(false),
-                        TextInput::make('age')
-                            ->label('Age')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        Select::make('sex')
-                            ->label('Sex')
-                            ->options([
-                                'Male' => 'Male',
-                                'Female' => 'Female',
-                            ]),
-                        TextInput::make('mother_tongue')
-                            ->label('Mother Tongue')
-                            ->prefixIcon('heroicon-m-language'),
-                        TextInput::make('permanent_address')
-                            ->label('Permanent Address')
-                            ->prefixIcon('heroicon-m-map-pin')
-                            ->suffixAction(
-                                Action::make('SelectFromThemap')
-                                    ->icon('heroicon-m-globe-americas')
-                                    ->action(function () {
-                                        
-                                    })
-                                ),
-                        TextInput::make('current_address')
-                            ->label('Current Address')
-                            ->prefixIcon('heroicon-m-map-pin')
-                            ->suffixAction(
-                                Action::make('SelectFromThemap')
-                                    ->icon('heroicon-m-globe-americas')
-                                    ->action(function () {
-                                        
-                                    })
-                                )
-                            ->columnspan([
-                                'sm' => 1,
-                                'md' => 1,
-                                'lg' => 2,
-                                'xl' => 2,
-                                '2xl' => 5,
-                            ]),
-                    ])
-                    ->columns([
-                        'sm' => 1,
-                        'md' => 1,
-                        'lg' => 3,
-                        'xl' => 4,
-                        '2xl' => 6,
-                    ]),
+                TextInput::make('lrn')->required(),
+                TextInput::make('firstname')->required(),
+                TextInput::make('lastname')->required(),
+                TextInput::make('middlename'),
+                TextInput::make('extension_name'),
+                DatePicker::make('birthday')->required(),
+                TextInput::make('permanent_address')->required(),
+                Select::make('gender')->options([
+                    'Male' => 'Male',
+                    'Female' => 'Female',
+                    'Other' => 'Other',
+                ])->required(),
+                TextInput::make('email')->email()->required(),
     
-                Section::make('Learners with Disability')
-                    ->description('Specify if the learner has a disability.')
-                    ->schema([
-                        Checkbox::make('is_learner_with_disability')
-                            ->label('Is learner with disability?')
-                            ->inline()
-                            ->reactive(),
-                        Select::make('disability_type')
-                            ->label('Disability Type')
-                            ->prefixIcon('heroicon-m-rectangle-group')
-                            ->options([
-                                'Visual Impairment', 'Hearing Impairment', 'Learning Disability', 'Intellectual Disability',
-                                'Blind', 'Low Vision', 'Speech/Language Disorder', 'Cerebral Palsy',
-                                'Special Health Problem/Chronic Disease', 'Multiple Disorder', 'Autism Spectrum Disorder',
-                                'Emotional-Behavioral Disorder', 'Orthopedic/Physical Handicap', 'Cancer',
-                            ])
-                            ->hidden(fn (callable $get) => ! $get('is_learner_with_disability'))
-                            ->columnSpan(3),
-                            ])
-                            ->columns(4),
+                TextInput::make('guardian_name')->required(),
+                TextInput::make('relationship')->required(),
+                TextInput::make('guardian_contact_number')->tel()->required(),
+                TextInput::make('guardian_email')->email(),
     
-                Section::make('Returning Learner')
-                    ->description('Check if the student is a returning learner.')
-                    ->schema([
-                        Checkbox::make('returning_learner')
-                            ->label('Returning Learner')
-                            ->inline()
-                            ->reactive(),
-                    ]),
+                Select::make('grade')->options([
+                    '0' => 'Kender',
+                    '1' => 'Grade 1',
+                    '2' => 'Grade 2',
+                    '3' => 'Grade 3',
+                    '4' => 'Grade 4',
+                    '5' => 'Grade 5',
+                    '6' => 'Grade 6',
+                ])->required(),
     
-                Section::make('Indigenous Peoples')
-                    ->description('Specify if the learner belongs to an indigenous group.')
-                    ->schema([
-                        Checkbox::make('indigenous_peoples')
-                            ->label('Indigenous Peoples?')
-                            ->inline()
-                            ->reactive(),
-                        TextInput::make('indigenous_peoples_specification')
-                            ->label('Specification')
-                            ->prefixIcon('heroicon-m-user-group')
-                            ->hidden(fn (callable $get) => ! $get('indigenous_peoples'))
-                            ->columnSpan(3),
-                    ])
-                    ->columns(4),
+                Select::make('section')->options([
+                    1,2,3,4,5,6
+                ])->required(),
     
-                Section::make('4Ps Beneficiary')
-                    ->description('Information on 4Ps (Pantawid Pamilyang Pilipino Program) status.')
-                    ->schema([
-                        Checkbox::make('4ps_beneficiary')
-                            ->label('Is 4Ps Beneficiary?')
-                            ->inline()
-                            ->reactive(),
-                        TextInput::make('4ps_household_id')
-                            ->label('4Ps Household ID')
-                            ->prefixIcon('heroicon-m-user-group')
-                            ->hidden(fn (callable $get) => ! $get('4ps_beneficiary'))
-                            ->columnSpan(3),
-                    ])
-                    ->columns(4),
-    
-                Section::make('Parents Information')
-                    ->description('Details about the learner’s parents or guardian.')
-                    ->schema([
-                        TextInput::make('father_name')
-                            ->label('Father’s Name')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        TextInput::make('mother_maiden_name')
-                            ->label('Mother’s Maiden Name')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        TextInput::make('legal_guardian_name')
-                            ->label('Legal Guardian’s Name')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                        TextInput::make('contact_number')
-                            ->label('Contact Number')
-                            ->prefixIcon('heroicon-m-user-circle'),
-                    ])
-                    ->columns([
-                        'sm' => 1,
-                        'md' => 1,
-                        'lg' => 4,
-                        'xl' => 4,
-                        '2xl' => 4,
-                    ]),
-    
-                Section::make('Education Information')
-                    ->description('Previous education background of the learner.')
-                    ->schema([
-                        TextInput::make('last_grade_level_completed')
-                            ->label('Last Grade Level Completed')
-                            ->prefixIcon('heroicon-m-academic-cap'),
-                        TextInput::make('last_school_year_completed')
-                            ->label('Last School Year Completed')
-                            ->prefixIcon('heroicon-m-academic-cap'),
-                        TextInput::make('last_school_attended')
-                            ->label('Last School Attended')
-                            ->prefixIcon('heroicon-m-academic-cap'),
-                        TextInput::make('school_id')
-                            ->label('School ID')
-                            ->prefixIcon('heroicon-m-academic-cap'),
-                        
-                            Select::make('distance_learning_preference')
-                            ->label('Distance Learning Preference')
-                            ->prefixIcon('heroicon-m-book-open')
-                            ->options([
-                                'Modular (Print)', 'Modular (Digital)', 'Online',
-                                'Radio-Based Instruction', 'Educational Television',
-                                'Blended', 'Homeschooling',
-                            ])
-                            ->columnspan([
-                                'sm' => 1,
-                                'md' => 1,
-                                'lg' => 2,
-                                'xl' => 2,
-                                '2xl' => 5,
-                            ]),
-                            Fieldset::make('Quarter')
-                            ->schema([
-                                Radio::make('semester')
-                                ->label('Quarter')
-                                ->options([
-                                    '1st' => '1st',
-                                    '2nd' => '2nd',
-                                    '3rd' => '3rd',
-                                    '4th' => '4th',
-                                ]),
-                            ])
-                    ])
-                    ->columns([
-                        'sm' => 1,
-                        'md' => 1,
-                        'lg' => 3,
-                        'xl' => 3,
-                        '2xl' => 6,
-                    ]),
+                TextInput::make('year_graduated'),
             ]);
     }
     
-
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('UploadExcelFile')
+                    ->requiresConfirmation()
+                    ->modalHeading('Upload Excel File')
+                    ->modalDescription('To upload an Excel file, first download the default template from the system, add your records to it, and then upload the updated file.')
+                    ->modalSubmitActionLabel('Download Template')
+                    ->color('primary')
+                    ->outlined()
+                    ->modalIcon('heroicon-o-command-line')
+                    ->modalIconColor('primary')
+                    ->modalCancelAction(fn (StaticAction $action) =>
+                        $action->label('Close')
+                    )
+                    ->modalSubmitAction(fn (StaticAction $action) =>
+                        $action->outlined()
+                    )
+                    ->badge('not functional')
+                    ->badgeColor('warning')
+                    ->extraAttributes([
+                        'title' => 'Display Only',
+                    ])
+                    ->extraModalFooterActions([
+                        Tables\Actions\Action::make('Upload Template')
+                            ->color('primary')
+                            ->form([
+                                FileUpload::make('upload')
+                                    ->label('Upload Excel File format (.xls or .xlsx)')
+                                    ->directory('excel/upload')
+                                    ->acceptedFileTypes([
+                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                                        'application/vnd.ms-excel',                                          // .xls
+                                    ])
+                                    ->maxSize(2048)
+                                    ->required(true)
+                                    ->columnSpanFull(),
+                            ])
+                            ->modalSubmitActionLabel('Upload Now')
+                            ->action(function (array $data) {
+                                // Code for Upload
+                                // You can use $data['upload'] here
+                                        Notification::make()
+                                        ->title('This function is under development')
+                                        ->color('warning')
+                                        ->send();
+                            }),
+                    ])
+                    ->action(function (array $data) {
+                        Notification::make()
+                            ->title('Template File is created')
+                            ->success()
+                            ->body('Click the donwload button')
+                            ->actions([
+                                NotificationAction::make('download')
+                                    // ->url(route('posts.show', $post), shouldOpenInNewTab: true),
+                                    ->action(function(){
+                                        Notification::make()
+                                            ->title('This function is under development')
+                                            ->color('warning')
+                                            ->send();
+                                    })
+                                    ->button(),
+                                NotificationAction::make('undo')
+                                    ->color('gray'),
+                            ])
+                            ->send();
+                    }),            
+                Tables\Actions\Action::make('CreateStudentRecord')
+                    ->modalSubmitActionLabel('Submit Student Record')
+                    ->modalCancelAction(fn (StaticAction $action) => $action->label('Cancel'))
+                    ->closeModalByClickingAway(false)
+                    ->slideOver()
+                    ->modalWidth(MaxWidth::FiveExtraLarge)
+                    ->badge('+')
+                    ->form([
+                        Section::make('Learner’s Reference Number')
+                            ->description('The Learner’s Reference Number (LRN) must be a 12-digit number.')
+                            ->schema([
+                                TextInput::make('lrn')
+                                    ->label('LRN')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->columnSpan(3)->required(true),
+                            ])
+                            ->columns(4),
+        
+                        Section::make('Student Personal Information')
+                            ->description('Basic personal details of the learner.')
+                            ->schema([
+                                FileUpload::make('profile')
+                                    ->label('Profile Picture')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->imageCropAspectRatio('1:1')
+                                    ->directory('students/profiles')
+                                    ->preserveFilenames()
+                                    ->columnSpanFull()->required(true),
+        
+                                TextInput::make('lastname')->rule('regex:/^[A-Za-z\s]+$/')
+                                    ->label('Last Name')
+                                    ->prefixIcon('heroicon-m-user-circle')->required(true),
+        
+                                TextInput::make('firstname')->rule('regex:/^[A-Za-z\s]+$/')
+                                    ->label('First Name')
+                                    ->prefixIcon('heroicon-m-user-circle')->required(true),
+        
+                                TextInput::make('middlename')->rule('regex:/^[A-Za-z\s]+$/')
+                                    ->label('Middle Name')
+                                    ->prefixIcon('heroicon-m-user-circle'),
+        
+                                TextInput::make('extension_name')->rule('regex:/^[A-Za-z\s]+$/')
+                                    ->label('Extension Name')
+                                    ->prefixIcon('heroicon-m-user-circle'),
+        
+                                DatePicker::make('birthday')
+                                    ->label('Birthdate')
+                                    ->prefixIcon('heroicon-m-cake')
+                                    ->native(false)->required(true),
+        
+                                Select::make('gender')
+                                    ->label('Gender')
+                                    ->options([
+                                        'Male' => 'Male',
+                                        'Female' => 'Female',
+                                        'Other' => 'Other',
+                                    ])->required(true),
+        
+                                TextInput::make('permanent_address')->rule('regex:/^[A-Za-z\s]+$/')
+                                    ->label('Permanent Address')
+                                    ->prefixIcon('heroicon-m-map-pin')
+                                    ->suffixAction(
+                                        Action::make('SelectFromTheMap')
+                                            ->icon('heroicon-m-globe-americas')
+                                            ->action(function () {
+                                                // Optional map logic here
+                                            })
+                                    )->required(true),
+        
+                                TextInput::make('email')->email()
+                                    ->label('Email')
+                                    ->prefixIcon('heroicon-m-envelope')
+                                    ->required(true),
+                            ])
+                            ->columns([
+                                'sm' => 1,
+                                'md' => 1,
+                                'lg' => 3,
+                                'xl' => 4,
+                                '2xl' => 6,
+                            ]),
+        
+                        Section::make('Guardian Information')
+                            ->description('Details about the learner’s guardian.')
+                            ->schema([
+                                TextInput::make('guardian_name')->rule('regex:/^[A-Za-z\s]+$/')
+                                    ->label('Guardian’s Name')
+                                    ->prefixIcon('heroicon-m-user-circle')->required(true),
+        
+                                TextInput::make('relationship')->rule('regex:/^[A-Za-z\s]+$/')
+                                    ->label('Relationship with Guardian')
+                                    ->prefixIcon('heroicon-m-user-circle')->required(true),
+        
+                                TextInput::make('guardian_contact_number')
+                                    ->label('Guardian’s Contact Number')
+                                    ->tel()
+                                    ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')
+                                    ->prefixIcon('heroicon-m-chat-bubble-left-ellipsis')->required(true),
+        
+                                TextInput::make('guardian_email')->email()
+                                    ->label('Guardian’s Email Address')
+                                    ->prefixIcon('heroicon-m-envelope')->required(false),
+                            ])
+                            ->columns([
+                                'sm' => 1,
+                                'md' => 1,
+                                'lg' => 4,
+                                'xl' => 4,
+                                '2xl' => 4,
+                            ]),
+        
+                        Section::make('Education Information')
+                            ->description('Previous education background of the learner.')
+                            ->schema([
+                                Select::make('grade')
+                                    ->label('Grade')
+                                    ->prefixIcon('heroicon-m-academic-cap')
+                                    ->options([
+                                        '0' => 'Kender',
+                                        '1' => 'Grade 1',
+                                        '2' => 'Grade 2',
+                                        '3' => 'Grade 3',
+                                        '4' => 'Grade 4',
+                                        '5' => 'Grade 5',
+                                        '6' => 'Grade 6',
+                                    ])->required(true),
+
+                                Select::make('section')
+                                    ->label('Section')
+                                    ->prefixIcon('heroicon-m-users')
+                                    ->options([
+                                        1,2,3,4,5,6
+                                    ])->required(true),
+
+        
+                                TextInput::make('year_graduated')
+                                    ->label('Year Graduated')
+                                    ->prefixIcon('heroicon-m-academic-cap')->required(false),
+                            ])
+                            ->columns([
+                                'sm' => 1,
+                                'md' => 1,
+                                'lg' => 3,
+                                'xl' => 3,
+                                '2xl' => 6,
+                            ]),
+                    
+                    ])
+                    ->action(function (array $data) {
+                        $student_data = [
+                            'profile' => $data['profile'],
+                            'lrn' => $data['lrn'],
+                            'birthday' => $data['birthday'],
+                            'permanent_address' => $data['permanent_address'],
+                            'gender' => $data['gender'],
+                            'grade' => $data['grade'],
+                            'section' => $data['section'],
+                            'email' => $data['email'],
+                            'guardian_name' => $data['guardian_name'],
+                            'relationship' => $data['relationship'],
+                            'guardian_contact_number' => $data['guardian_contact_number'],
+                            'guardian_email' => $data['guardian_email'],
+                            'year_graduated' => $data['year_graduated'],
+                        ];
+                        $user_model = [
+                            'FirstName' => $data['lastname'],
+                            'LastName' => $data['firstname'],
+                            'MiddleName' => $data['middlename'],
+                            'extension_name' => $data['extension_name'],
+                            'email' => $data['email'],
+                            'password' => Hash::make($data['lastname'].$data['lrn']),
+                            'lrn' => $data['lrn'],
+                            'year_graduated' => $data['year_graduated'],
+                            'role' => 'student'
+                        ];
+                        User::create($user_model);
+                        Student::create($student_data);
+                        return Notification::make()
+                        ->title('Saved successfully')
+                        ->icon('heroicon-o-document-text')
+                        ->iconColor('success')
+                        ->send();
+                    })
+            
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('lrn')
-                    ->label('LRN')
-                    ->searchable()
-                    ->sortable(),
-    
-                Tables\Columns\TextColumn::make('first_name')
-                    ->label('First Name')
-                    ->searchable()
-                    ->sortable(),
-    
-                Tables\Columns\TextColumn::make('last_name')
-                    ->label('Last Name')
-                    ->searchable()
-                    ->sortable(),
-    
-                Tables\Columns\TextColumn::make('age')
-                    ->label('Age')
-                    ->sortable(),
-    
-                Tables\Columns\TextColumn::make('sex')
-                    ->label('Sex')
-                    ->sortable(),
-    
-                Tables\Columns\TextColumn::make('birthdate')
-                    ->label('Birthdate')
-                    ->date()
-                    ->sortable(),
-    
-                Tables\Columns\TextColumn::make('mother_tongue')
-                    ->label('Mother Tongue'),
-    
-                Tables\Columns\TextColumn::make('permanent_address')
-                    ->label('Address')
-                    ->limit(30),
-    
-                Tables\Columns\TextColumn::make('last_grade_level_completed')
-                    ->label('Last Grade Level')
-                    ->sortable(),
-    
-                Tables\Columns\TextColumn::make('last_school_attended')
-                    ->label('Last School Attended')
-                    ->limit(30),
+                ImageColumn::make('profile')
+                    ->label('Photo')
+                    ->circular()
+                    ->height(40)
+                    ->width(40),
+
+                TextColumn::make('lrn')->label('LRN')->searchable()->sortable(),
+                TextColumn::make('firstname')->label('First Name')->searchable()->sortable(),
+                TextColumn::make('middlename')->label('Middle Name')->searchable()->sortable(),
+                TextColumn::make('lastname')->label('Last Name')->searchable()->sortable()->toggleable(),
+                TextColumn::make('extension_name')->label('Ext Name')->searchable()->sortable(),
+                TextColumn::make('birthday')->label('Birthday')->date()->sortable(),
+                TextColumn::make('age')->label('Age')->sortable(),
+                TextColumn::make('permanent_address')->label('Address')->limit(30)->tooltip(fn($record) => $record->permanent_address),
+                TextColumn::make('gender')->label('Gender')->sortable(),
+
+                TextColumn::make('grade')->label('Grade')->sortable()->toggleable(),
+                TextColumn::make('section')->label('Section')->sortable()->toggleable(),
+
+                TextColumn::make('guardian_name')->label('Guardian')->toggleable(),
+                TextColumn::make('relationship')->label('Relation')->toggleable(),
+                TextColumn::make('guardian_contact_number')->label('Contact')->toggleable(),
+                TextColumn::make('guardian_email')->label('Email')->toggleable(),
+                TextColumn::make('year_graduated')->label('Graduated')->toggleable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('sex')
-                    ->label('Sex')
+                Tables\Filters\SelectFilter::make('gender')
                     ->options([
                         'Male' => 'Male',
                         'Female' => 'Female',
-                    ]),
-    
-                Tables\Filters\Filter::make('is_learner_with_disability')
-                    ->label('Learner with Disability')
-                    ->query(fn ($query) => $query->where('is_learner_with_disability', true)),
-    
-                Tables\Filters\Filter::make('returning_learner')
-                    ->label('Returning Learner')
-                    ->query(fn ($query) => $query->where('returning_learner', true)),
-    
-                Tables\Filters\Filter::make('4ps_beneficiary')
-                    ->label('4Ps Beneficiary')
-                    ->query(fn ($query) => $query->where('4ps_beneficiary', true)),
+                        'Other' => 'Other',
+                    ])
+                    ->label('Gender'),
+
+                Tables\Filters\SelectFilter::make('grade')
+                    ->options([
+                        '0' => 'Kender',
+                        '1' => 'Grade 1',
+                        '2' => 'Grade 2',
+                        '3' => 'Grade 3',
+                        '4' => 'Grade 4',
+                        '5' => 'Grade 5',
+                        '6' => 'Grade 6',
+                    ])
+                    ->label('Grade'),
+
+                Tables\Filters\SelectFilter::make('year_graduated')
+                    ->options(
+                        fn () => Student::query()
+                            ->whereNotNull('year_graduated')
+                            ->distinct()
+                            ->pluck('year_graduated', 'year_graduated')
+                            ->toArray()
+                    )
+                    ->label('Year Graduated')
+                    ->searchable(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
+                // The Edit Action
+                Tables\Actions\Action::make('Edit')
+                    ->label('Edit Student')
+                    ->modalHeading('Update Student Information')
+                    ->modalDescription('Modify the details of the student profile.')
+                    ->modalSubmitActionLabel('Save Changes')
+                    ->modalWidth(MaxWidth::FiveExtraLarge)
+                    ->slideOver()
+                    ->form([
+                        Section::make('Learner’s Reference Number')
+                            ->description('The Learner’s Reference Number (LRN) must be a 12-digit number.')
+                            ->schema([
+                                TextInput::make('lrn')
+                                    ->label('LRN')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->columnSpan(3)
+                                    ->required(true)
+                                    ->readOnly() // Disable if LRN should not be edited
+                            ])
+                            ->columns(4),
+    
+                        Section::make('Personal Information')
+                            ->description('Basic personal details of the learner.')
+                            ->schema([
+                                FileUpload::make('profile')
+                                    ->label('Profile Picture')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->imageCropAspectRatio('1:1')
+                                    ->directory('students/profiles')
+                                    ->preserveFilenames()
+                                    ->columnSpanFull()
+                                    ->required(false),
+
+                                TextInput::make('lastname')
+                                    ->label('Last Name')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->required(true),
+    
+                                TextInput::make('firstname')
+                                    ->label('First Name')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->required(true),
+    
+                                TextInput::make('middlename')
+                                    ->label('Middle Name')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->required(false),
+    
+                                TextInput::make('extension_name')
+                                    ->label('Extension Name')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->required(false),
+    
+                                DatePicker::make('birthday')
+                                    ->label('Birthdate')
+                                    ->prefixIcon('heroicon-m-cake')
+                                    ->native(false)
+                                    ->required(true),
+    
+                                Select::make('gender')
+                                    ->label('Gender')
+                                    ->options([
+                                        'Male' => 'Male',
+                                        'Female' => 'Female',
+                                        'Other' => 'Other',
+                                    ])
+                                    ->required(true),
+    
+                                TextInput::make('permanent_address')
+                                    ->label('Permanent Address')
+                                    ->prefixIcon('heroicon-m-map-pin')
+                                    ->required(true)
+                                    ->suffixAction(
+                                        Action::make('SelectFromTheMap')
+                                            ->icon('heroicon-m-globe-americas')
+                                            ->action(function () {
+                                                // Optional map logic here
+                                            })
+                                    ),
+    
+                                TextInput::make('email')
+                                    ->email()
+                                    ->label('Email')
+                                    ->prefixIcon('heroicon-m-envelope')
+                                    ->required(true),
+                            ])
+                            ->columns(4),
+    
+                        Section::make('Guardian Information')
+                            ->description('Details about the learner’s guardian.')
+                            ->schema([
+                                TextInput::make('guardian_name')
+                                    ->label('Guardian’s Name')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->required(true),
+    
+                                TextInput::make('relationship')
+                                    ->label('Relationship with Guardian')
+                                    ->prefixIcon('heroicon-m-user-circle')
+                                    ->required(true),
+    
+                                TextInput::make('guardian_contact_number')
+                                    ->label('Guardian’s Contact Number')
+                                    ->tel()
+                                    ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')
+                                    ->prefixIcon('heroicon-m-chat-bubble-left-ellipsis')
+                                    ->required(true),
+    
+                                TextInput::make('guardian_email')
+                                    ->email()
+                                    ->label('Guardian’s Email Address')
+                                    ->prefixIcon('heroicon-m-envelope')
+                                    ->required(false),
+                            ])
+                            ->columns(4),
+    
+                        Section::make('Education Information')
+                            ->description('Previous education background of the learner.')
+                            ->schema([
+                                Select::make('grade')
+                                    ->label('Grade')
+                                    ->prefixIcon('heroicon-m-academic-cap')
+                                    ->options([
+                                        '0' => 'Kender',
+                                        '1' => 'Grade 1',
+                                        '2' => 'Grade 2',
+                                        '3' => 'Grade 3',
+                                        '4' => 'Grade 4',
+                                        '5' => 'Grade 5',
+                                        '6' => 'Grade 6',
+                                    ])
+                                    ->required(true),
+    
+                                Select::make('section')
+                                    ->label('Section')
+                                    ->prefixIcon('heroicon-m-users')
+                                    ->options([1, 2, 3, 4, 5, 6])
+                                    ->required(true),
+    
+                                TextInput::make('year_graduated')
+                                    ->label('Year Graduated')
+                                    ->prefixIcon('heroicon-m-academic-cap')
+                                    ->required(false),
+                            ])
+                            ->columns(4),
+                    ])
+                    ->fillForm(fn (Student $record): array => [
+                        'lrn' => $record->lrn,
+                        'profile' => $record->profile,
+                        'firstname' => $record->firstname,
+                        'lastname' => $record->lastname,
+                        'middlename' => $record->middlename,
+                        'extension_name' => $record->extension_name,
+                        'birthday' => $record->birthday,
+                        'gender' => $record->gender,
+                        'permanent_address' => $record->permanent_address,
+                        'email' => $record->user_email,
+                        'guardian_name' => $record->guardian_name,
+                        'relationship' => $record->relationship,
+                        'guardian_contact_number' => $record->guardian_contact_number,
+                        'guardian_email' => $record->guardian_email,
+                        'grade' => $record->grade,
+                        'section' => $record->section,
+                        'year_graduated' => $record->year_graduated,
+                    ])
+                    ->action(function (array $data, Student $studentModel): void {
+                        // Update the student data
+                        // dd($data);
+                        $studentModel->update([
+                            'profile' => $data['profile'],
+                            'lrn' => $data['lrn'],
+                            'birthday' => $data['birthday'],
+                            'gender' => $data['gender'],
+                            'permanent_address' => $data['permanent_address'],
+                            'email' => $data['email'],
+                            'guardian_name' => $data['guardian_name'],
+                            'relationship' => $data['relationship'],
+                            'guardian_contact_number' => $data['guardian_contact_number'],
+                            'guardian_email' => $data['guardian_email'],
+                            'grade' => $data['grade'],
+                            'section' => $data['section'],
+                            'year_graduated' => $data['year_graduated'],
+                        ]);
+                        User::where('lrn', $data['lrn'])->update([
+                            'FirstName' => $data['firstname'],
+                            'LastName' => $data['lastname'],
+                            'MiddleName' => $data['middlename'],
+                            'extension_name' => $data['extension_name'],
+                            'email' => $data['email'],
+                            'year_graduated' => $data['year_graduated'],
+                        ]);
+                    })
+            ], position: ActionsPosition::BeforeColumns)
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
-    
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->leftJoin('users', 'students.lrn', '=', 'users.lrn')
+            ->select([
+                'students.id',
+                'users.id as userId',
+                'users.FirstName as firstname',
+                'users.LastName as lastname',
+                'users.MiddleName as middlename',
+                'users.extension_name',
+                'users.email as user_email',
+                'students.lrn',
+                'students.profile',
+                'students.birthday',
+                'students.permanent_address',
+                'students.gender',
+                'students.grade',
+                'students.section',
+                'students.guardian_name',
+                'students.relationship',
+                'students.guardian_contact_number',
+                'students.guardian_email',
+            ]);
+    }
+
+    
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListStudents::route('/'),
-            'create' => Pages\CreateStudent::route('/create'),
-            'edit' => Pages\EditStudent::route('/{record}/edit'),
+            // 'create' => Pages\CreateStudent::route('/create'),
+            // 'edit' => Pages\EditStudent::route('/{record}/edit'),
         ];
     }
 }

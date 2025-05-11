@@ -12,8 +12,14 @@
             </a>
 
             <flux:navbar class="-mb-px max-lg:hidden">
+                <flux:navbar.item icon="megaphone" :href="route('announcement')" :current="request()->routeIs('announcement')" wire:navigate>
+                    {{ __('Announcement') }}
+                </flux:navbar.item>
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('News Page') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="calendar-date-range" :href="route('event')" :current="request()->routeIs('event')">
+                    {{ __('Events') }}
                 </flux:navbar.item>
             </flux:navbar>
 
@@ -98,8 +104,16 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')">
+                    <flux:navlist.item icon="megaphone" :href="route('announcement')" :current="request()->routeIs('announcement')" wire:navigate>
+                    {{ __('Announcement') }}
+                    </flux:navlist.item>
+                    
                     <flux:navlist.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
+                    </flux:navlist.item>
+                    
+                    <flux:navlist.item icon="calendar-date-range" :href="route('event')" :current="request()->routeIs('event')" wire:navigate>
+                    {{ __('Events') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
