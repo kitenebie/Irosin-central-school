@@ -122,15 +122,6 @@ class Announcements extends Component implements HasForms, HasTable, HasActions
                     ->maxSize(50000),
                 MarkdownEditor::make('content')
                     ->toolbarButtons([
-                        'blockquote',
-                        'bold',
-                        'bulletList',
-                        'heading',
-                        'italic',
-                        'link',
-                        'orderedList',
-                        'redo',
-                        'undo',
                     ]),
             ])
             ->statePath('data');
@@ -237,7 +228,6 @@ class Announcements extends Component implements HasForms, HasTable, HasActions
                     ]),
                 Tables\Actions\EditAction::make()
                     ->modalHeading('Edit announcement')
-                    ->modalSubmitAction(false) // Hide submit button
                     ->modalCancelActionLabel('Close')
                     ->fillForm(fn(Announcement $record): array => [
                         'title' => $record->title,
@@ -319,17 +309,7 @@ class Announcements extends Component implements HasForms, HasTable, HasActions
                             ->maxFiles(15)
                             ->maxSize(50000),
                         MarkdownEditor::make('content')
-                            ->toolbarButtons([
-                                'blockquote',
-                                'bold',
-                                'bulletList',
-                                'heading',
-                                'italic',
-                                'link',
-                                'orderedList',
-                                'redo',
-                                'undo',
-                            ]),
+                            ->toolbarButtons([]),
                     ]),
                 Tables\Actions\DeleteAction::make(),
             ])

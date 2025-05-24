@@ -1,6 +1,8 @@
 <div>
+        <x-filament-actions::modals />
+
     <!-- Modal Trigger -->
-    <x-filament::modal width="2xl" slide-over :close-by-clicking-away="false">
+    <x-filament::modal width="3xl" slide-over :close-by-clicking-away="false">
         <x-slot name="trigger">
             <x-filament::button>
                 Post New News
@@ -18,7 +20,6 @@
                 </x-filament::button>
             </form>
             
-            <x-filament-actions::modals />
         </div>
     </x-filament::modal>
     <br> <br>

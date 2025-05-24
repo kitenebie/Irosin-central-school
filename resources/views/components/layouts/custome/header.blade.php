@@ -56,6 +56,7 @@
             min-width: 238px;
             display: flex;
         }
+
         .reaction-popup.show {
             visibility: visible;
             opacity: 1;
@@ -115,11 +116,23 @@
     @livewireStyles()
 </head>
 
-<body class="bg-white text-gray-800">
+<body class="bg-white text-gray-800 hide-scrollbar hide-scrollbar::-webkit-scrollbar">
     @include('partials.navbar')
     {{ $slot }}
     @livewireScripts()
     @fluxScripts()
+    <style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+    </style>
 </body>
 
 </html>

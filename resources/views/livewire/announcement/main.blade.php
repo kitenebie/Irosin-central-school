@@ -1,12 +1,11 @@
-<div class="flex relative">
-
+<div class="flex relative h-full mt-18">
     <div
-        class="flex flex-col gap-6 items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
+        class="flex flex-col lg:mr-8 gap-6 items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
         <section class="max-w-2xl mt-2 mx-auto px-1 lg-px-6 pb-12">
             @forelse ($announcements  as $arryKey => $announcement)
-                <!-- Facebook-like Post Section -->
+                <!-- Facebook-like Post Section --> 
                 <!-- 4 -->
-                <div class="mb-2 bg-white border border lg-p-4 rounded-md shadow-sm text-gray-800 text-xs sm:text-sm"
+                <div id="{{$announcement->id}}" class="mb-2  bg-white border border lg-p-4 rounded-md shadow-sm text-gray-800 text-xs sm:text-sm"
                     style="font-family: Arial, sans-serif">
                     <!-- Header -->
                     <div class="flex items-center gap-2 p-3 border-b border-gray-200">
@@ -40,7 +39,11 @@
                             <button class="hide-btn ml-2 text-gray-500" style="display: none;"> See less...</button>
                         </p>
                         <!-- Image Grid -->
-                        <div class="grid grid-cols-2 grid-rows-2 gap-1 mb-3">
+                        @if(count($announcement->images) >= 4)
+                            <div class="grid grid-cols-2 grid-rows-2 gap-1 mb-3">
+                        @else
+                            <div class="grid grid-cols gap-1 mb-3">
+                        @endif
                             @forelse (array_slice($announcement->images, 0, 4) as $index => $image)
                                 <div
                                     class="bg-white-700 border flex justify-center items-center relative text-white font-bold text-sm w-full h-64">
@@ -85,10 +88,10 @@
                             @endforelse
                             <span id="reaction-summary"
                                 class="text-gray-700 text-[12px] ml-2 select-none cursor-default">
-                                {{ $this->total_reacts($announcement->id, 'post') }} reacts
+                                {{ $this->total_reacts($announcement->id, 'post') }}
                             </span>
                         </div>
-                        <a href="/announcement-comment/({{ $announcement->id }}"> 24 comments </a>
+                        <a href="/announcement-comment/({{ $announcement->id }}"> {{$this->commentCount($announcement->id)}}  </a>
                     </div>
                     <div class="border-t border-gray-200 flex justify-around text-gray-600 text-[11px] py-2">
                         <button class="flex items-center gap-1 hover:text-gray-800 relative" id="like-button-footer"
@@ -138,10 +141,11 @@
                     </div>
                 </div>
             @empty
+                @livewire('announcement.not-found')
             @endforelse
-
-
         </section>
     </div>
-    @livewire('announcement.comments')
+    @if(session('comment'))
+        @livewire('announcement.comments', ['comment', 5])
+    @endif
 </div>

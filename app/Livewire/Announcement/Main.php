@@ -44,7 +44,8 @@ class Main extends Component
     }
     public function total_reacts($post_id, $type)
     {
-        return  React::where('post_id', $post_id)->where('type', $type)->count();
+        $reactNum = React::where('post_id', $post_id)->where('type', $type)->count();
+            return  $reactNum < 1 ? "" : ($reactNum > 1 ? $reactNum . " reacts" : $reactNum . " react");
     }
     public function current_react($post_id, $type)
     {
@@ -54,7 +55,7 @@ class Main extends Component
             return "/build/img/" . strtolower($post->first()->react) . ".png";
         }
         return "";
-    }
+    } 
     public function react($react, $id, $type)
     {
         $post = React::where('user_id', Auth::user()->id)->where('post_id', $id)->where('type', $type);
@@ -77,10 +78,11 @@ class Main extends Component
         ]);
     }
 
-    // public function main_comments($id)
-    // {
-    //     return CommentDB::where('post_id', $id)->where('type', 'main')->get();
-    // }
+    public function commentCount($id)
+    {
+        $commentNum = CommentDB::where('post_id', $id)->count();
+        return $commentNum > 1 ? $commentNum . " comments": $commentNum . " comment";
+    }
     public function reply_comments($id)
     {
         return CommentDB::where('post_id', $id)->where('type', 'reply')->get();
@@ -112,7 +114,7 @@ class Main extends Component
     public $i=null;
     public function openComment($id)
     {
-        return $this->dispatch('announcementSelected', $id);
+        return redirect()->route('comment_section', ['id'=>$id]);
     }
     public function render() 
     {
